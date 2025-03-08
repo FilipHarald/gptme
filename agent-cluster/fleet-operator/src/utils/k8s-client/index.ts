@@ -1,5 +1,6 @@
 import * as k8s from "@kubernetes/client-node";
 import { customResourceOperations } from "./custom-resource-operations.js";
+import { ingressRouteOperations } from "./ingressroute-operations.js";
 import { K8sClientContext } from "./k8s-client-types.js";
 import { podOperations } from "./pod-operations.js";
 import { serviceOperations } from "./service-operations.js";
@@ -21,6 +22,11 @@ export class KubernetesClient implements K8sClientContext {
 
   public createService: typeof serviceOperations.createService;
   public deleteService: typeof serviceOperations.deleteService;
+
+  // IngressRoute operations
+  public getIngressRoute: typeof ingressRouteOperations.getIngressRoute;
+  public createIngressRoute: typeof ingressRouteOperations.createIngressRoute;
+  public deleteIngressRoute: typeof ingressRouteOperations.deleteIngressRoute;
 
   public getClientPod: typeof customResourceOperations.getClientPod;
   public listClientPods: typeof customResourceOperations.listClientPods;
@@ -45,6 +51,11 @@ export class KubernetesClient implements K8sClientContext {
     // Bind service operations
     this.createService = serviceOperations.createService.bind(this);
     this.deleteService = serviceOperations.deleteService.bind(this);
+
+    // Bind IngressRoute operations
+    this.getIngressRoute = ingressRouteOperations.getIngressRoute.bind(this);
+    this.createIngressRoute = ingressRouteOperations.createIngressRoute.bind(this);
+    this.deleteIngressRoute = ingressRouteOperations.deleteIngressRoute.bind(this);
 
     // Bind custom resource operations
     this.getClientPod = customResourceOperations.getClientPod.bind(this);

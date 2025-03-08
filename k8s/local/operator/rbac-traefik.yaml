@@ -1,0 +1,32 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fleet-operator-traefik-role
+  namespace: gptmingdom
+rules:
+  - apiGroups:
+      - traefik.io
+    resources:
+      - ingressroutes
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fleet-operator-traefik-rolebinding
+  namespace: gptmingdom
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fleet-operator-traefik-role
+subjects:
+  - kind: ServiceAccount
+    name: fleet-operator
+    namespace: gptmingdom

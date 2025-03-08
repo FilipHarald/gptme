@@ -1,0 +1,17 @@
+apiVersion: skaffold/v4beta1
+kind: Config
+metadata:
+  name: only-traefik
+manifests:
+  rawYaml:
+    - k8s/local/traefik/api-routes.yaml
+    - k8s/local/traefik/fleet-router-middleware.yaml
+    - k8s/local/traefik/agent-pod-routes.yaml
+deploy:
+  kubectl: {}
+profiles:
+  - name: dev
+    activation:
+      - kubeContext: minikube
+
+

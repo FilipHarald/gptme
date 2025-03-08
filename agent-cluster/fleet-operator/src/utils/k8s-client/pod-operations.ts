@@ -110,7 +110,7 @@ export const podOperations = {
   async getGptmeServerImage(this: KubernetesClient): Promise<string> {
     try {
       // Look for pods with the label from the working deployment
-      const pods = await this.listPodsByLabel("app=gptme-agent-label");
+      const pods = await this.listPodsByLabel("app=gptme-reference-agent-label");
 
       // If we found any pods, use the image from the first one
       if (

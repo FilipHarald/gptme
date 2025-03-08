@@ -23,11 +23,11 @@ build:
         dockerfile: Dockerfile
 manifests:
   rawYaml:
-    - ../gptme-agent/deployment.yaml
-    - ../gptme-agent/service.yaml
-    - ../gptme-agent/configmap.yaml
-    - ../gptme-agent/ingress.yaml
-    - ../gptme-agent/startup-script-configmap.yaml
+    - ../gptme-reference-agent/deployment.yaml
+    - ../gptme-reference-agent/service.yaml
+    - ../gptme-reference-agent/configmap.yaml
+    - ../gptme-reference-agent/ingress.yaml
+    - ../gptme-reference-agent/startup-script-configmap.yaml
     - ../operator/deployment.yaml
     - ../operator/service.yaml
     - ../operator/rbac.yaml
@@ -35,6 +35,7 @@ manifests:
     - ../operator/agents-ingress.yaml
     - ../traefik/api-routes.yaml
     - ../traefik/fleet-router-middleware.yaml
+    - ../traefik/agent-pod-routes.yaml
 deploy:
   kubectl: {}
 profiles:

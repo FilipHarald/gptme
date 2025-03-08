@@ -18,8 +18,10 @@ export const customResourceOperations = {
         namespace: this.namespace,
         plural: "clientpods",
         name,
-      });
-      logger.info(`Got ClientPod ${JSON.stringify(response)}`);
+      }) as ClientPod;
+
+      const clientPodStr = `ClientPod "${name}" phase: ${response.status?.phase} (${response.status?.lastActivity})`;
+      logger.info(clientPodStr);
       return response;
     } catch (error) {
       // More robust error handling for 404 cases

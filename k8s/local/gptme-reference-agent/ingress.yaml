@@ -1,19 +1,19 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: gptme-ingress
+  name: gptme-reference-agent-ingress
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
-  - host: gptme.localhost
+  - host: gptme-reference.localhost
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: gptme-agent-service
+            name: gptme-reference-agent-service
             port:
               number: 8080

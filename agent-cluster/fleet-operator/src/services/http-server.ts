@@ -39,11 +39,6 @@ export class HttpServer {
 
     // Traefik forwardAuth route for direct pod routing
     this.app.all("/api/route", async (req: Request, res: Response) => {
-      logger.info("⭐⭐⭐ /api/route endpoint called ⭐⭐⭐");
-      // Log all request headers to debug what Traefik is sending
-      logger.info(`Request headers: ${JSON.stringify(req.headers, null, 2)}`);
-      logger.info(`Request path: ${JSON.stringify(req.path)}`);
-
       try {
         // Extract API key from the original URL path
         // The path pattern is /api/v1/{apiKey}/instance/{instanceId}
@@ -74,7 +69,6 @@ export class HttpServer {
         // Use the updated pod status for checking
         if (
           !clientPod?.status?.phase ||
-          clientPod.status.phase !== "Running" ||
           !clientPod?.status?.podName
         ) {
           // Pod is still being created
@@ -93,10 +87,10 @@ export class HttpServer {
 
         const podName = clientPod.status.podName;
         //const podServiceUrl = `http://agents.gptme.localhost/api/v1/${apiKey}/agents/${podName}`;
+        // The new URL will match our dedicated IngressRoute for this pod
         const podServiceUrl = `http://agents.gptme.localhost/agents/${podName}`;
-        //const podServiceUrl = `http://${serviceName}.${this.clientPodController.namespace}.svc.cluster.local:5000`;
 
-        logger.info(`Redirecting to pod: ${podServiceUrl}`);
+        logger.info(`Redirecting to pod via dedicated route: ${podServiceUrl}`);
 
         // HTTP 307 maintains the original method (GET, POST, etc.)
         res.redirect(307, podServiceUrl);

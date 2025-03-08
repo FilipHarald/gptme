@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: gptme-agent-service
+  name: gptme-reference-agent-service
 spec:
   type: ClusterIP
   selector:
-    app: gptme-agent-label
+    app: gptme-reference-agent-label
   ports:
   - port: 8080
     targetPort: 5000

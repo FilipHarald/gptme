@@ -38,7 +38,6 @@ export async function createPodManifest(
       containers: [
         {
           name: "gptme-agent",
-          // Use the image we discovered from running pods
           image: image,
           imagePullPolicy: "IfNotPresent",
           command: ["/scripts/startup.sh"],
@@ -63,17 +62,16 @@ export async function createPodManifest(
               name: "CLIENT_ID",
               value: spec.clientId,
             },
-            // Removed MODEL environment variable to let the system auto-detect from API key
           ],
           envFrom: [
             {
               configMapRef: {
-                name: "gptme-agent-config",
+                name: "gptme-reference-agent-config",
               },
             },
             {
               secretRef: {
-                name: "gptme-agent-secrets",
+                name: "gptme-reference-agent-secrets",
               },
             },
           ],
@@ -117,7 +115,6 @@ export async function createPodManifest(
           },
         },
       ],
-      // Set termination grace period to 30 seconds
       terminationGracePeriodSeconds: 30,
     },
   };

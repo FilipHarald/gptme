@@ -1,0 +1,9 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-agents-prefix
+  namespace: gptmingdom
+spec:
+  stripPrefix:
+    prefixes:
+      - /agents

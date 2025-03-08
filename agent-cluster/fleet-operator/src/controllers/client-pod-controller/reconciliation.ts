@@ -26,6 +26,39 @@ export async function reconcileClientPod(
     const pod = await this.createPodManifest(spec, podName);
     await this.k8sClient.createPod(pod);
 
+    // Create a service for the pod
+    logger.info(`Creating service for pod ${podName}`);
+    const service = {
+      apiVersion: "v1",
+      kind: "Service",
+      metadata: {
+        name: podName,
+        namespace: this.namespace,
+        labels: {
+          app: this.podTemplate,
+          "gptme.ai/client-id": spec.clientId,
+        },
+      },
+      spec: {
+        selector: {
+          app: this.podTemplate,
+          "gptme.ai/client-id": spec.clientId,
+        },
+        ports: [
+          {
+            port: 5000,
+            targetPort: 5000,
+            name: "http",
+          },
+        ],
+      },
+    };
+    await this.k8sClient.createService(service);
+
+    // Create an IngressRoute for the pod
+    logger.info(`Creating IngressRoute for pod ${podName}`);
+    await this.k8sClient.createIngressRoute(podName);
+
     // Update status
     await this.updateClientPodStatus(name, {
       podName,
@@ -35,6 +68,18 @@ export async function reconcileClientPod(
   } else {
     // Pod exists, check if it needs updating
     logger.info(`Pod ${podName} already exists for ClientPod ${name}`);
+
+    // Check if IngressRoute exists, create if not
+    try {
+      const ingressRouteName = `route-${podName}`;
+      const existingIngressRoute = await this.k8sClient.getIngressRoute(ingressRouteName);
+      if (!existingIngressRoute) {
+        logger.info(`IngressRoute for pod ${podName} not found, creating it`);
+        await this.k8sClient.createIngressRoute(podName);
+      }
+    } catch (error) {
+      logger.error(`Error checking/creating IngressRoute for ${podName}: ${error}`);
+    }
 
     // Update status with current pod phase
     await this.updateClientPodStatus(name, {
@@ -57,8 +102,16 @@ export async function cleanupClientPodResources(
     try {
       logger.info(`Deleting pod ${status.podName}`);
       await this.k8sClient.deletePod(status.podName);
+
+      // Also delete the corresponding service
+      logger.info(`Deleting service ${status.podName}`);
+      await this.k8sClient.deleteService(status.podName);
+
+      // Delete the IngressRoute for the pod
+      logger.info(`Deleting IngressRoute for pod ${status.podName}`);
+      await this.k8sClient.deleteIngressRoute(status.podName);
     } catch (error) {
-      logger.error(`Error deleting pod ${status.podName}: ${error}`);
+      logger.error(`Error deleting pod/service ${status.podName}: ${error}`);
     }
   }
 }

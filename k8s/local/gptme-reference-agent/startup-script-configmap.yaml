@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: gptme-startup-script
   labels:
-    app: gptme-agent-label
+    app: gptme-reference-agent-label
 data:
   startup.sh: |
     #!/bin/bash
