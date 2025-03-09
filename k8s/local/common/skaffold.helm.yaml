@@ -48,11 +48,14 @@ manifests:
           # Configure ports
           ports.web.port: 8000
           ports.websecure.port: 8443
+          logs:
+            general:
+              level: TRACE
+            access.enabled: true
           # Configure specific middlewares needed for per-client routing
           additionalArguments:
             - "--api.insecure=true"
             - "--api.dashboard=true"
-            - "--log.level=DEBUG"
 deploy:
   kubectl: {}
 profiles:
@@ -62,7 +65,7 @@ profiles:
     build:
       local:
         push: false
-    portForward:
+    portForward: # TODO: how does this work?
       # Add port forwarding for Traefik dashboard
       - resourceType: service
         resourceName: traefik

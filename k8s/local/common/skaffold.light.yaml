@@ -34,7 +34,6 @@ manifests:
     - ../operator/crd.yaml
     - ../operator/agents-ingress.yaml
     - ../traefik/api-routes.yaml
-    - ../traefik/fleet-router-middleware.yaml
     - ../traefik/agent-pod-routes.yaml
 deploy:
   kubectl: {}

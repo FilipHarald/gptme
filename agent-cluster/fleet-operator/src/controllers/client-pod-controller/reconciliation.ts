@@ -14,19 +14,18 @@ export async function reconcileClientPod(
   }
   const name = clientPod.metadata.name;
   const spec = clientPod.spec;
-  const status = clientPod.status || {};
-
-  // Check if pod already exists
-  const podName = status.podName || `${this.podTemplate}-${spec.clientId}`;
+  const podName =
+    clientPod?.status?.podName || `${this.podTemplate}-${spec.clientId}`;
   const existingPod = await this.k8sClient.getPod(podName);
-
+  const status = clientPod.status || {
+    podName,
+    phase: "Unknown",
+    lastActivity: new Date().toISOString(),
+  };
   if (!existingPod) {
-    // Pod doesn't exist, create it
     logger.info(`Creating pod for ClientPod ${name}`);
     const pod = await this.createPodManifest(spec, podName);
     await this.k8sClient.createPod(pod);
-
-    // Create a service for the pod
     logger.info(`Creating service for pod ${podName}`);
     const service = {
       apiVersion: "v1",
@@ -54,40 +53,27 @@ export async function reconcileClientPod(
       },
     };
     await this.k8sClient.createService(service);
-
-    // Create an IngressRoute for the pod
     logger.info(`Creating IngressRoute for pod ${podName}`);
     await this.k8sClient.createIngressRoute(podName);
-
-    // Update status
-    await this.updateClientPodStatus(name, {
-      podName,
-      phase: "Creating",
-      lastActivity: new Date().toISOString(),
-    });
   } else {
-    // Pod exists, check if it needs updating
     logger.info(`Pod ${podName} already exists for ClientPod ${name}`);
-
-    // Check if IngressRoute exists, create if not
     try {
-      const ingressRouteName = `route-${podName}`;
-      const existingIngressRoute = await this.k8sClient.getIngressRoute(ingressRouteName);
-      if (!existingIngressRoute) {
-        logger.info(`IngressRoute for pod ${podName} not found, creating it`);
-        await this.k8sClient.createIngressRoute(podName);
-      }
+      logger.info(`Ensuring IngressRoute exists for pod ${podName}`);
+      await this.k8sClient.createIngressRoute(podName); // TODO: is this necessary?
     } catch (error) {
-      logger.error(`Error checking/creating IngressRoute for ${podName}: ${error}`);
+      if ((error as { code: number })?.code === 409) {
+        logger.info(`IngressRoute for pod ${podName} already exists`);
+      } else {
+        logger.error(
+          `Error creating IngressRoute for ${podName}: ${(error as Error).stack}`,
+        );
+      }
     }
-
-    // Update status with current pod phase
-    await this.updateClientPodStatus(name, {
-      podName,
-      phase: existingPod.status?.phase || "Unknown",
-      lastActivity: new Date().toISOString(),
-    });
+    if (existingPod.status?.phase) {
+      status.phase = existingPod.status?.phase;
+    }
   }
+  await this.updateClientPodStatus(name, status);
 }
 
 /**
@@ -123,9 +109,12 @@ export async function updateClientPodStatus(
   this: ClientPodController,
   name: string,
   status: Partial<ClientPodStatus>,
-) {
+): Promise<ClientPod | null> {
   try {
-    const clientPod = (await this.k8sClient.getClientPod(name)) as ClientPod;
+    logger.info(
+      `Updating status for ClientPod ${name} with status: ${JSON.stringify(status, null, 2)}`,
+    );
+    const clientPod = await this.k8sClient.getClientPod(name);
     if (!clientPod) {
       logger.warn(`ClientPod ${name} not found, cannot update status`);
       return null;
@@ -164,7 +153,7 @@ export async function updateClientPodStatus(
           },
         ],
       });
-    return response.body;
+    return response.body as ClientPod;
   } catch (error) {
     logger.error(`Error updating ClientPod status: ${error}`);
     throw error;

@@ -7,19 +7,8 @@ spec:
   entryPoints:
     - web
   routes:
-    # Route for the initial API requests - uses forwardAuth middleware
     - match: PathPrefix(`/api/v1`)
       kind: Rule
-      middlewares:
-        - name: fleet-router
       services:
         - name: fleet-operator
           port: 8080
-
-#    # Direct routes to client pods - no middleware needed
-#    # These routes will be accessed after redirect from the fleet operator
-#    - match: PathPrefix(`/agents/`)
-#      kind: Rule
-#      services:
-#        - name: fleet-operator # This service will handle routing to specific client pods
-#          port: 8080

@@ -1,6 +1,5 @@
 import express, { NextFunction, Request, Response } from "express";
 import { ClientPodController } from "../controllers/client-pod-controller/index.js";
-import { ClientPod } from "../models/types.js";
 import logger from "../utils/logger.js";
 
 export class HttpServer {
@@ -38,70 +37,7 @@ export class HttpServer {
     });
 
     // Traefik forwardAuth route for direct pod routing
-    this.app.all("/api/route", async (req: Request, res: Response) => {
-      try {
-        // Extract API key from the original URL path
-        // The path pattern is /api/v1/{apiKey}/instance/{instanceId}
-        const originalPath = req.get("X-Forwarded-Uri") || req.path;
-        const pathParts = originalPath.split("/");
-
-        if (pathParts.length < 4) {
-          logger.error(`Invalid path format: ${originalPath}`);
-          res.status(400).json({ error: "Invalid path format" });
-          return;
-        }
-
-        // Extract client identifiers from path
-        const apiKey = pathParts[3];
-        const instanceId = pathParts.length >= 6 ? pathParts[5] : "default";
-
-        if (!apiKey) {
-          res.status(401).json({ error: "API key is required" });
-          return;
-        }
-
-        // Get or create client pod
-        const clientPod = await this.clientPodController.handleClientRequest(
-          apiKey,
-          instanceId,
-        );
-
-        // Use the updated pod status for checking
-        if (
-          !clientPod?.status?.phase ||
-          !clientPod?.status?.podName
-        ) {
-          // Pod is still being created
-          res.setHeader("Retry-After", "5");
-          res.status(202).json({
-            message: "Pod is being provisioned",
-            status: clientPod?.status?.phase || "Creating",
-          });
-          return;
-        }
-
-        //        const clientId = this.clientPodController.generateClientId(
-        //          apiKey,
-        //          instanceId,
-        //        );
-
-        const podName = clientPod.status.podName;
-        //const podServiceUrl = `http://agents.gptme.localhost/api/v1/${apiKey}/agents/${podName}`;
-        // The new URL will match our dedicated IngressRoute for this pod
-        const podServiceUrl = `http://agents.gptme.localhost/agents/${podName}`;
-
-        logger.info(`Redirecting to pod via dedicated route: ${podServiceUrl}`);
-
-        // HTTP 307 maintains the original method (GET, POST, etc.)
-        res.redirect(307, podServiceUrl);
-      } catch (error) {
-        logger.error(`Error handling route request: ${error}`);
-        res.status(500).json({ error: "Internal server error" });
-      }
-    });
-
-    // Client request handler - specify route as string and handler as separate argument
-    this.app.get(
+    this.app.all(
       "/api/v1/:apiKey/instances/:instanceId",
       async (req: Request, res: Response) => {
         try {
@@ -110,34 +46,35 @@ export class HttpServer {
             res.status(401).json({ error: "API key is required" });
             return;
           }
-
           const instanceId = req.params.instanceId;
-          const result = await this.clientPodController.handleClientRequest(
+          const clientPod = await this.clientPodController.handleClientRequest(
             apiKey,
             instanceId,
           );
-
-          // Return the pod details that the client should connect to
-          const clientPod = result as ClientPod;
-          if (!clientPod?.status || !clientPod?.status?.podName) {
+          logger.info(`ClientPod main: ${JSON.stringify(clientPod, null, 2)}`);
+          logger.info(`ClientPod main: ${Object.keys(clientPod ?? {})}`);
+          if (
+            !clientPod?.status?.phase ||
+            (!clientPod?.status?.podName && !clientPod?.metadata?.name)
+          ) {
             res.status(202).json({
               message: "Pod is being provisioned",
-              status: clientPod.status?.phase || "Creating",
+              status: clientPod?.status?.phase,
+              podName: clientPod?.status?.podName ?? clientPod?.metadata?.name,
             });
             return;
           }
+          const podName = clientPod.status.podName ?? clientPod.metadata.name;
 
-          // Return pod connection details
+          const podServiceUrl = `http://agents.gptme.localhost/agents/${podName}`;
           res.status(200).json({
-            podName: clientPod.status.podName,
+            podName,
             status: clientPod.status.phase,
-            clientId: clientPod.spec.clientId,
+            podServiceUrl,
           });
-          return;
         } catch (error) {
-          logger.error(`Error handling client request: ${error}`);
+          logger.error(`Error handling route request: ${error}`);
           res.status(500).json({ error: "Internal server error" });
-          return;
         }
       },
     );

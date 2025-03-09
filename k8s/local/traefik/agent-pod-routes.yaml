@@ -4,6 +4,6 @@ metadata:
   name: strip-agents-prefix
   namespace: gptmingdom
 spec:
-  stripPrefix:
-    prefixes:
-      - /agents
+  stripPrefixRegex:
+    regex:
+      - "^/agents/[^/]+"

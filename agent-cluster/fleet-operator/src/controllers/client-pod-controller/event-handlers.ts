@@ -14,7 +14,7 @@ export async function setupWatchers(this: ClientPodController) {
       await this.reconcileClientPod(clientPod);
     } catch (error) {
       // Use a more specific type than 'any'
-      if ((error as { statusCode?: number }).statusCode === 409) {
+      if ((error as { code?: number }).code === 409) {
         // Pod already exists
         logger.info(`ClientPod ${clientPod.metadata.name} already exists`);
         return;

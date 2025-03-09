@@ -12,26 +12,22 @@ export async function handleClientRequest(
   apiKey: string,
   instanceId: string,
 ) {
-  // Generate a consistent name based on API key and instance ID
+  logger.info(`111`);
   const clientId = this.generateClientId(apiKey, instanceId);
   const name = `${this.podTemplate}-${clientId}`;
 
   try {
-    // Check if ClientPod already exists
+    logger.info(`222`);
     const existingClientPod = await this.k8sClient.getClientPod(name);
-
     if (existingClientPod) {
-      // ClientPod exists, update last activity
-      await this.updateClientPodStatus(name, {
+      logger.info(`333`);
+      const res = await this.updateClientPodStatus(name, {
         ...existingClientPod.status,
         lastActivity: new Date().toISOString(),
       });
-      return existingClientPod;
+      return res;
     }
-
     logger.info(`ClientPod ${name} not found, creating new pod`);
-
-    // ClientPod doesn't exist, create a new one
     const clientPod: ClientPod = {
       apiVersion: "gptme.ai/v1",
       kind: "ClientPod",

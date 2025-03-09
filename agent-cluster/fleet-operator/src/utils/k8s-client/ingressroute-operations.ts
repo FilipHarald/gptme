@@ -20,13 +20,12 @@ export const ingressRouteOperations = {
       });
       return response.body;
     } catch (error) {
-      // If it's a 404, the IngressRoute doesn't exist
       if (
         (
           error as {
-            response?: { statusCode: number };
+            code?: number;
           }
-        )?.response?.statusCode === 404
+        )?.code === 404
       ) {
         return null;
       }
@@ -91,19 +90,15 @@ export const ingressRouteOperations = {
       logger.info(`Created IngressRoute for pod ${podName}`);
       return response.body;
     } catch (error) {
-      // Check if it's an AlreadyExists error
       if (
         (
           error as {
-            response?: { statusCode: number };
+            code?: number;
           }
-        )?.response?.statusCode === 409
+        )?.code === 409
       ) {
         logger.info(`IngressRoute for pod ${podName} already exists`);
       } else {
-        logger.error(
-          `Error creating IngressRoute for pod ${podName}: ${error}`,
-        );
         throw error;
       }
     }
@@ -133,9 +128,9 @@ export const ingressRouteOperations = {
       if (
         (
           error as {
-            response?: { statusCode: number };
+            code?: number;
           }
-        ).response?.statusCode === 404
+        ).code === 404
       ) {
         logger.info(
           `IngressRoute for pod ${podName} not found, skipping deletion`,

@@ -24,9 +24,7 @@ export const customResourceOperations = {
       logger.info(clientPodStr);
       return response;
     } catch (error) {
-      // More robust error handling for 404 cases
       if (error && typeof error === "object") {
-        // Check for different 404 patterns
         const errorObj = error as {
           response?: { statusCode?: number };
           statusCode?: number;
@@ -43,9 +41,7 @@ export const customResourceOperations = {
           return null;
         }
       }
-
-      // Log the error structure to help debug
-      logger.error("Error retrieving ClientPod:", error);
+      logger.error("Error retrieving ClientPod:", (error as Error).stack);
       throw error;
     }
   },
